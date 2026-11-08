@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+*.sqlite*
+__pycache__/
+.pytest_cache/
+.venv/
+node_modules/
+.next/
+*.log
+*.tsbuildinfo

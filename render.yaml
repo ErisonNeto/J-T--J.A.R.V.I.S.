@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: jt-jarvis-gateway
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m uvicorn jarvis.gateway:create_gateway --factory --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeployTrigger: "off"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.12
+      - key: PREDATOR_API_URL
+        sync: false
+      - key: BRIDGE_TOKEN
+        sync: false
+      - key: CF_ACCESS_CLIENT_ID
+        sync: false
+      - key: CF_ACCESS_CLIENT_SECRET
+        sync: false

@@ -1,0 +1,657 @@
+.j-root {
+  --red: #d92335;
+  --ink: #242936;
+  --muted: #727a89;
+  --line: #e5e8ee;
+  color: var(--ink);
+  font:
+    14px Arial,
+    sans-serif;
+  background: #f6f7f9;
+  min-height: 100vh;
+  line-height: 1.5;
+}
+.j-root * {
+  box-sizing: border-box;
+}
+.j-root button,
+.j-root input,
+.j-root select,
+.j-root textarea {
+  font: inherit;
+}
+.j-root button {
+  cursor: pointer;
+  background: white;
+  border: 1px solid var(--line);
+  padding: 10px 14px;
+  border-radius: 8px;
+  color: var(--ink);
+}
+.j-root button:hover {
+  border-color: #da8790;
+}
+.j-root button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.j-root input,
+.j-root select,
+.j-root textarea {
+  padding: 10px;
+  border: 1px solid #d9dee6;
+  border-radius: 7px;
+  background: white;
+  color: var(--ink);
+  min-width: 0;
+}
+.j-root label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: #596273;
+  font-size: 12px;
+}
+.j-root textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+.j-root :focus-visible {
+  outline: 3px solid #eaa4ab;
+  outline-offset: 3px;
+}
+.j-root h1,
+.j-root h2,
+.j-root h3 {
+  letter-spacing: -0.7px;
+  line-height: 1.2;
+}
+.j-root h2 {
+  font-size: 30px;
+}
+.j-root small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.j-root .j-primary {
+  background: var(--red);
+  color: white;
+  border-color: var(--red);
+}
+.j-logo {
+  color: var(--red);
+  font-size: 36px;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: -2px;
+  text-decoration: none;
+  display: block;
+  line-height: 1;
+}
+.j-logo span {
+  font-size: 10px;
+  display: block;
+  letter-spacing: 3px;
+  margin-top: 7px;
+  font-style: normal;
+}
+.j-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.7px;
+  color: var(--muted);
+}
+.j-shell {
+  display: flex;
+}
+.j-sidebar {
+  width: 250px;
+  flex-shrink: 0;
+  background: white;
+  border-right: 1px solid var(--line);
+  padding: 35px 22px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+}
+.j-sidebar > .j-eyebrow {
+  margin-top: 35px;
+}
+.j-sidebar nav {
+  display: grid;
+  gap: 6px;
+  margin-top: 20px;
+}
+.j-sidebar nav button {
+  text-align: left;
+  border: 0;
+}
+.j-root .j-active {
+  background: #fff0f2;
+  color: #c02736;
+}
+.j-history {
+  overflow: auto;
+  flex: 1;
+}
+.j-history button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: 0;
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+.j-selected {
+  background: #f5f6f8 !important;
+}
+.j-user {
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+  display: grid;
+  gap: 5px;
+}
+.j-user button {
+  justify-self: start;
+  font-size: 11px;
+  padding: 5px 12px;
+}
+.j-work {
+  min-width: 0;
+  flex: 1;
+  max-width: 1500px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.j-header {
+  background: white;
+  padding: 24px 38px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.j-header h1 {
+  font-size: 25px;
+  margin: 7px 0 0;
+}
+.j-header h1 span {
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--muted);
+  margin-left: 9px;
+}
+.j-status {
+  font-size: 12px;
+}
+.j-status i {
+  display: inline-block;
+  border-radius: 50%;
+  height: 7px;
+  width: 7px;
+  background: #258b75;
+  margin-right: 7px;
+}
+.j-status small {
+  display: block;
+  margin-top: 4px;
+  padding-left: 14px;
+}
+.j-filters {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr 0.8fr 1fr;
+  gap: 12px;
+  padding: 20px 38px 7px;
+}
+.j-filter-note {
+  font-size: 10px;
+  color: var(--muted);
+  margin: 0 38px 12px;
+}
+.j-thread {
+  flex: 1;
+  padding: 24px 38px;
+  max-width: 1040px;
+  width: 100%;
+  margin: 0 auto;
+}
+.j-welcome {
+  text-align: center;
+  padding: 50px 15px 35px;
+  max-width: 760px;
+  margin: auto;
+}
+.j-orb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 66px;
+  height: 66px;
+  border: 1px solid #e9b5bc;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #fff, #ffe8ec);
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--red);
+  box-shadow: 0 8px 28px #d9233515;
+  margin: 0 auto 27px;
+}
+.j-welcome h2 {
+  font-size: 36px;
+  margin: 15px 0;
+}
+.j-welcome > p {
+  color: var(--muted);
+  max-width: 500px;
+  margin: 0 auto;
+}
+.j-suggestions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 30px 0 20px;
+}
+.j-suggestions button {
+  text-align: left;
+  padding: 20px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.j-suggestions span {
+  display: block;
+  color: var(--red);
+  font-size: 18px;
+  margin-top: 12px;
+}
+.j-message {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--line);
+}
+.j-human {
+  background: #edf0f4;
+  border: 0;
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 20px 0 10px 15%;
+}
+.j-message-label {
+  font-size: 11px;
+  letter-spacing: 0.6px;
+  font-weight: 700;
+  color: #b32939;
+  margin-bottom: 10px;
+}
+.j-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+}
+.j-results {
+  margin-top: 20px;
+  border: 1px solid var(--line);
+  background: white;
+  border-radius: 12px;
+  padding: 22px;
+}
+.j-result-head {
+  display: grid;
+  gap: 5px;
+}
+.j-result-head > span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.j-result-head strong {
+  font-size: 30px;
+}
+.j-comparisons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 18px;
+}
+.j-comparisons > div {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  background: #f7f8fa;
+  border-radius: 7px;
+}
+.j-comparisons b {
+  font-size: 20px;
+}
+.j-comparisons span {
+  font-size: 11px;
+}
+.j-chart {
+  display: flex;
+  gap: 14px;
+  align-items: flex-end;
+  overflow-x: auto;
+  padding: 25px 0;
+}
+.j-chart > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 48px;
+}
+.j-chart span {
+  background: #dc4a59;
+  border-radius: 4px 4px 0 0;
+  width: 28px;
+}
+.j-table {
+  overflow-x: auto;
+  max-height: 380px;
+}
+.j-table table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 12px;
+}
+.j-table caption {
+  text-align: left;
+  padding: 10px 0;
+  font-weight: 700;
+}
+.j-table th,
+.j-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--line);
+}
+.j-table td small {
+  display: block;
+}
+.j-note {
+  font-size: 11px !important;
+  color: var(--muted);
+  margin-top: 16px !important;
+}
+.j-root details {
+  font-size: 12px;
+  margin: 12px 0;
+  color: var(--muted);
+}
+.j-root summary {
+  cursor: pointer;
+}
+.j-composer {
+  position: sticky;
+  bottom: 0;
+  margin: 15px 38px 24px;
+  padding: 16px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 10px 35px #16243a0a;
+}
+.j-compose-top,
+.j-compose-bottom {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+}
+.j-compose-top select {
+  font-size: 11px;
+  padding: 7px;
+}
+.j-compose-top label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  font-size: 11px;
+}
+.j-composer textarea {
+  width: 100%;
+  border: 0;
+  margin: 12px 0;
+  min-height: 65px;
+  max-height: 240px;
+}
+.j-compose-bottom small {
+  font-size: 9px;
+  max-width: 310px;
+  margin-right: auto;
+}
+.j-compose-bottom button {
+  font-size: 12px;
+  white-space: nowrap;
+}
+.j-processing {
+  font-size: 12px;
+  color: var(--red);
+  padding: 20px 0;
+}
+.j-panel {
+  padding: 30px 38px;
+  max-width: 950px;
+  width: 100%;
+  margin: 0 auto;
+}
+.j-panel > p {
+  color: var(--muted);
+}
+.j-memory-form {
+  display: grid;
+  gap: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+  padding: 25px;
+  margin: 25px 0;
+}
+.j-memory-form h3 {
+  margin: 0;
+}
+.j-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.j-memory {
+  padding: 24px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin: 14px 0;
+}
+.j-memory > small {
+  display: block;
+  margin: 12px 0;
+}
+.j-memory button {
+  font-size: 12px;
+  margin-right: 8px;
+}
+.j-badge {
+  display: inline-block;
+  border-radius: 20px;
+  background: #fff2dc;
+  color: #90621d;
+  font-size: 11px;
+  padding: 4px 10px;
+}
+.j-badge.confirmed {
+  background: #e7f4ef;
+  color: #25745c;
+}
+.j-badge.rejected {
+  background: #f5e7eb;
+  color: #9a3d4e;
+}
+.j-error {
+  background: #fff0f1;
+  color: #a51f32;
+  border: 1px solid #edc2c8;
+  border-radius: 7px;
+  padding: 12px 18px;
+  margin: 10px 38px;
+  font-size: 12px;
+}
+.j-notice {
+  background: #edf6f2;
+  color: #25745c;
+  padding: 10px 20px;
+  margin: 10px 38px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.j-login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 25px;
+}
+.j-login form {
+  width: 490px;
+  max-width: 100%;
+  padding: 42px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  display: grid;
+  gap: 22px;
+}
+.j-login h1 {
+  font-size: 30px;
+  margin: 0;
+}
+.j-login p {
+  margin: 0;
+  color: var(--muted);
+}
+.j-login .j-error {
+  margin: 0;
+  color: #a51f32;
+}
+.j-mobile {
+  display: none;
+}
+@media (max-width: 1000px) {
+  .j-sidebar {
+    width: 215px;
+    padding: 30px 16px;
+  }
+  .j-filters {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .j-suggestions {
+    grid-template-columns: 1fr;
+  }
+  .j-welcome {
+    padding-top: 25px;
+  }
+  .j-suggestions button {
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .j-suggestions span {
+    margin: 0;
+  }
+  .j-compose-bottom small {
+    display: none;
+  }
+}
+@media (max-width: 700px) {
+  .j-sidebar {
+    display: none;
+  }
+  .j-mobile {
+    display: flex;
+    gap: 8px;
+    padding: 12px 18px;
+  }
+  .j-mobile button {
+    font-size: 11px;
+    padding: 7px;
+  }
+  .j-header {
+    padding: 20px;
+  }
+  .j-filters {
+    grid-template-columns: 1fr 1fr;
+    padding: 12px 18px;
+    gap: 9px;
+  }
+  .j-filter-note {
+    margin: 0 18px 10px;
+  }
+  .j-thread,
+  .j-panel {
+    padding: 18px;
+  }
+  .j-composer {
+    margin: 12px;
+  }
+  .j-welcome h2 {
+    font-size: 28px;
+  }
+  .j-welcome {
+    padding: 25px 0;
+  }
+  .j-error,
+  .j-notice {
+    margin: 10px 18px;
+  }
+  .j-human {
+    margin-left: 5%;
+  }
+  .j-results {
+    padding: 14px;
+  }
+  .j-comparisons {
+    grid-template-columns: 1fr;
+  }
+  .j-memory-form {
+    padding: 18px;
+  }
+  .j-login form {
+    padding: 28px;
+  }
+  .j-header h1 span {
+    display: none;
+  }
+  .j-compose-top {
+    align-items: flex-start;
+  }
+  .j-compose-top label {
+    max-width: 140px;
+  }
+}
+
+.j-root .j-sidebar {
+  inset: auto;
+  left: auto;
+}
+.j-root .j-header {
+  height: auto;
+}
+.j-root .j-message:hover,
+.j-root .j-memory:hover {
+  box-shadow: none;
+  border-color: var(--line);
+}
+.j-root .j-history {
+  min-height: 50px;
+}
+.j-root .j-message {
+  box-shadow: none;
+}
+.j-root .j-compose-top {
+  flex-wrap: wrap;
+}
