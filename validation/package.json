@@ -1,0 +1,11 @@
+{
+  "name": "jarvis-migration-validation",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node migrations.mjs && node sql-adapters.mjs"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "0.5.12"
+  }
+}
