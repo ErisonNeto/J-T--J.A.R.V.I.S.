@@ -1,21 +1,91 @@
+# Separate web preview. Existing indicator services and operational database are untouched.
 services:
   - type: web
-    name: jt-jarvis-gateway
+    name: jt-jarvis-api-web
     runtime: python
     plan: free
+    region: oregon
+    branch: feat/jarvis-web
     rootDir: backend
     buildCommand: pip install -r requirements.txt
-    startCommand: python -m uvicorn jarvis.gateway:create_gateway --factory --host 0.0.0.0 --port $PORT
+    startCommand: python -m jarvis.deploy
     healthCheckPath: /health
     autoDeployTrigger: "off"
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.12
-      - key: PREDATOR_API_URL
-        sync: false
+      - key: APP_ENV
+        value: production
+      - key: JARVIS_MANAGED_MEMORY
+        value: "true"
+      - key: JARVIS_MEMORY_ADMIN_URL
+        fromDatabase:
+          name: jt-jarvis-web-memory
+          property: connectionString
+      - key: MEMORY_ROLE_PASSWORD
+        generateValue: true
       - key: BRIDGE_TOKEN
+        generateValue: true
+      - key: JARVIS_BOOTSTRAP_TOKEN
         sync: false
-      - key: CF_ACCESS_CLIENT_ID
+      - key: JT_API_URL
+        value: https://jt-api.rockettechbr.com.br
+      - key: JT_API_KEY
         sync: false
-      - key: CF_ACCESS_CLIENT_SECRET
+      - key: JT_API_TIMEOUT
+        value: "60"
+      - key: OPENAI_API_KEY
         sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4.1-mini
+      - key: ALLOW_EXTERNAL_AI
+        value: "true"
+      - key: ALLOW_EXTERNAL_SEARCH
+        value: "false"
+      - key: REGIONAL_NAME
+        value: ORLEAN DA SILVA DO NASCIMENTO
+      - key: APPROVED_INDICATORS
+        value: ""
+      - key: REQUESTS_PER_MINUTE
+        value: "30"
+      - key: RETENTION_DAYS
+        value: "365"
+      - key: JARVIS_PUBLIC_HOST
+        fromService:
+          type: web
+          name: jt-jarvis-api-web
+          envVarKey: RENDER_EXTERNAL_HOSTNAME
+
+  - type: web
+    name: jt-jarvis-web
+    runtime: node
+    plan: free
+    region: oregon
+    branch: feat/jarvis-web
+    rootDir: frontend
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start -- --hostname 0.0.0.0 --port $PORT
+    healthCheckPath: /jarvis
+    autoDeployTrigger: "off"
+    envVars:
+      - key: NODE_VERSION
+        value: 24.22.0
+      - key: JARVIS_API_HOST
+        fromService:
+          type: web
+          name: jt-jarvis-api-web
+          envVarKey: JARVIS_PUBLIC_HOST
+      - key: JARVIS_BRIDGE_TOKEN
+        fromService:
+          type: web
+          name: jt-jarvis-api-web
+          envVarKey: BRIDGE_TOKEN
+
+databases:
+  - name: jt-jarvis-web-memory
+    databaseName: jt_jarvis_memory
+    user: jarvis_provisioner
+    plan: free
+    region: oregon
+    postgresMajorVersion: "17"
+    ipAllowList: []

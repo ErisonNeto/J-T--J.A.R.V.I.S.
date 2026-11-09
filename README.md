@@ -1,3 +1,5 @@
+> **Web independente (homologação):** veja [docs/web-render.md](docs/web-render.md). O `render.yaml` agora prepara frontend, backend e PostgreSQL dedicado à memória. Indicadores são consultados pela JT API; começam desabilitados até validação.
+
 # JARVIS — primeira versão executável
 
 Assistente de Inteligência Operacional da Regional Orlean — J&T Express.

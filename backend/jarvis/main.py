@@ -110,7 +110,9 @@ def create_app(settings=None, store=None, operations=None, model=None):
 
     @app.get("/health")
     def health():
-        return {"status": "alive", "service": "jarvis", "version": "0.1.0"}
+        with db.engine.connect() as c:
+            c.execute(text("SELECT 1"))
+        return {"status": "alive", "service": "jarvis", "version": "0.2.0"}
 
     @app.get("/api/status")
     def status(u=Depends(user)):
@@ -119,9 +121,53 @@ def create_app(settings=None, store=None, operations=None, model=None):
         return {
             "memory": "connected",
             "model": "configured" if llm.enabled() else "local",
-            "operational": "configured_not_verified" if op.engine else "not_configured",
+            "operational": (
+                "configured_not_verified" if op.configured else "not_configured"
+            ),
             "user": {"name": u["name"], "role": u["role"]},
         }
+
+    @app.get("/api/diagnostics")
+    def diagnostics(u=Depends(user)):
+        require(u, "manager", "admin")
+        import httpx
+
+        result = {"memory": "connected", "model": s.model, "checks": {}}
+        with db.engine.connect() as c:
+            c.execute(text("SELECT 1"))
+        if s.jt_api_url:
+            with httpx.Client(timeout=20, follow_redirects=False) as client:
+                for key, statement in [
+                    ("jt_api", "SELECT 1"),
+                    (
+                        "historical_scope",
+                        "SELECT COUNT(*) FROM jarvis.base_assignments",
+                    ),
+                ]:
+                    try:
+                        response = client.post(
+                            s.jt_api_url + "/query",
+                            headers={"X-API-Key": s.jt_api_key},
+                            json={"sql": statement, "params": []},
+                        )
+                        check = {"http_status": response.status_code, "ok": False}
+                        if response.is_success:
+                            rows = response.json().get("rows")
+                            check["ok"] = bool(rows and rows[0])
+                            if key == "historical_scope" and check["ok"]:
+                                check["assignments"] = int(rows[0][0])
+                        result["checks"][key] = check
+                    except Exception:
+                        result["checks"][key] = {
+                            "ok": False,
+                            "error": "Conexao ou resposta indisponivel.",
+                        }
+        else:
+            result["checks"]["jt_api"] = {
+                "ok": False,
+                "error": "JT API nao configurada.",
+            }
+        return result
 
     @app.get("/api/catalog")
     def catalog(u=Depends(user)):

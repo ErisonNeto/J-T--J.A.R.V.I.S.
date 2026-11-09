@@ -1,0 +1,33 @@
+// Run from repo root: node validation/proxy.cjs (requires frontend npm ci).
+const fs = require('node:fs');
+const path = require('node:path');
+const assert = require('node:assert/strict');
+const ts = require('../frontend/node_modules/typescript');
+const Module = require('node:module');
+const source = fs.readFileSync(path.join(__dirname, '../frontend/app/api/jarvis/[...path]/route.ts'), 'utf8');
+const result = ts.transpileModule(source, {compilerOptions: {module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022}});
+const compiled = new Module(path.join(__dirname, 'route-test.cjs'), module);
+compiled.filename = path.join(__dirname, 'route-test.cjs');
+compiled.paths = module.paths;
+compiled._compile(result.outputText, compiled.filename);
+const request = (auth) => ({method:'GET', headers: new Headers(auth ? {Authorization:auth} : {}), nextUrl:new URL('https://web.example.test/api/jarvis/status')});
+const ctx = (name) => ({params:Promise.resolve({path:[name]})});
+(async () => {
+  process.env.NODE_ENV='production';
+  delete process.env.JARVIS_API_URL;
+  process.env.JARVIS_API_HOST='api.example.test';
+  process.env.JARVIS_BRIDGE_TOKEN='server-only-bridge-test';
+  let captured;
+  global.fetch = async (url, options) => {captured={url, options};return Response.json({memory:'connected'});};
+  assert.equal((await compiled.exports.GET(request(),ctx('status'))).status,401);
+  assert.equal((await compiled.exports.GET(request('Bearer '+'t'.repeat(40)),ctx('query'))).status,404);
+  const response=await compiled.exports.GET(request('Bearer '+'t'.repeat(40)),ctx('status'));
+  assert.equal(response.status,200);
+  assert.equal(captured.url,'https://api.example.test/api/status');
+  assert.equal(captured.options.headers['X-Bridge-Token'],'server-only-bridge-test');
+  assert.equal(captured.options.redirect,'error');
+  assert.equal(JSON.stringify(await response.json()).includes('server-only'),false);
+  process.env.JARVIS_API_URL='http://api.example.test';
+  assert.equal((await compiled.exports.GET(request('Bearer '+'t'.repeat(40)),ctx('status'))).status,503);
+  console.log('PASS proxy: auth, route allowlist, HTTPS, bridge forwarding, secret omission');
+})().catch(err=>{console.error(err);process.exitCode=1;});
