@@ -655,3 +655,9 @@
 .j-root .j-compose-top {
   flex-wrap: wrap;
 }
+
+.j-calculator { margin: 12px 28px; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+.j-calculator summary { cursor: pointer; font-weight: 700; }
+.j-calculator form { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; }
+.j-calculator p { color: var(--muted); }
+.j-calculator strong { color: var(--ink); }

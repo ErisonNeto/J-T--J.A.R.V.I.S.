@@ -6,6 +6,15 @@ type Session = { touched: number; requests: number[]; conversations: Map<string,
 const sessions = new Map<string, Session>();
 const TTL = 24 * 60 * 60 * 1000;
 const notice = "Conversa de teste: histórico temporário, perdido ao reiniciar o servidor. Memória permanente e indicadores ainda aguardam integração com a VM.";
+const localMode = () => process.env.AI_PROVIDER === "ollama";
+function localRoot() {
+  const url = new URL(process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434");
+  if (url.protocol !== "http:" || !["127.0.0.1", "localhost", "[::1]"].includes(url.hostname) || url.username || url.password || url.search || url.hash || url.pathname !== "/") {
+    throw new Error("Ollama local exige endereço HTTP de loopback, sem caminho ou credenciais.");
+  }
+  return url.origin;
+}
+function localModel() { return process.env.OLLAMA_MODEL || "gemma3:1b"; }
 const reply = (body: unknown, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
 
 function authenticate(request: Request): Session | null {
@@ -58,7 +67,13 @@ async function diagnostics() {
       } catch { checks[name] = { ok: false, error: "Conexão indisponível." }; }
     }
   } else checks.jt_api = { ok: false, error: "JT API não configurada." };
-  if (process.env.OPENAI_API_KEY) {
+  if (localMode()) {
+    try {
+      const r = await fetch(localRoot() + "/api/tags", { cache: "no-store", redirect: "error", signal: AbortSignal.timeout(10000) });
+      const data = r.ok ? await r.json() : null;
+      checks.ollama = { ok: !!(r.ok && Array.isArray(data?.models) && data.models.some((m: any) => m.name === localModel() || m.model === localModel())), http_status: r.status, model: localModel() };
+    } catch { checks.ollama = { ok: false, error: "Ollama indisponível neste computador. Abra o Ollama e confirme o modelo instalado." }; }
+  } else if (process.env.OPENAI_API_KEY) {
     try {
       const r = await fetch("https://api.openai.com/v1/models/" + encodeURIComponent(process.env.OPENAI_MODEL || "gpt-4.1-mini"), {
         headers: { Authorization: "Bearer " + process.env.OPENAI_API_KEY }, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(15000),
@@ -76,7 +91,7 @@ export async function webPreview(request: Request, path: string): Promise<Respon
   session.requests = session.requests.filter(t => now - t < 60000);
   if (session.requests.length >= 30) return reply({ detail: "Limite de uso. Aguarde um minuto." }, 429);
   session.requests.push(now);
-  if (path === "status" && request.method === "GET") return reply({ preview: true, notice, memory: "temporary", model: process.env.OPENAI_API_KEY ? "configured" : "unconfigured", operational: "pending_verification", user: { name: "Orlean", role: "manager" } });
+  if (path === "status" && request.method === "GET") return reply({ preview: true, notice, memory: "temporary", model: localMode() || process.env.OPENAI_API_KEY ? "configured" : "unconfigured", provider: localMode() ? "ollama" : "openai", model_name: localMode() ? localModel() : (process.env.OPENAI_MODEL || "gpt-4.1-mini"), operational: "pending_verification", user: { name: "Orlean", role: "manager" } });
   if (path === "diagnostics" && request.method === "GET") return diagnostics();
   if (path === "conversations" && request.method === "GET") return reply([...session.conversations.values()].reverse().map(({ id, title, created_at }) => ({ id, title, created_at })));
   if (path.startsWith("conversations/") && request.method === "GET") {
@@ -88,7 +103,8 @@ export async function webPreview(request: Request, path: string): Promise<Respon
   let data;
   try { data = await body(request); } catch { return reply({ detail: "Mensagem inválida ou muito grande." }, 400); }
   if (typeof data.message !== "string" || !data.message.trim() || data.message.length > 4000) return reply({ detail: "Digite uma mensagem com até 4.000 caracteres." }, 422);
-  if (!process.env.OPENAI_API_KEY) return reply({ detail: "A chave OpenAI ainda não está configurada no servidor." }, 503);
+  if (localMode() && data.message.length > 2000) return reply({ detail: "No modelo local, envie até 2.000 caracteres por mensagem." }, 422);
+  if (!localMode() && !process.env.OPENAI_API_KEY) return reply({ detail: "A chave OpenAI ainda não está configurada no servidor." }, 503);
   if (session.pending) return reply({ detail: "Aguarde a resposta anterior." }, 409);
   let conversation: Conversation | undefined;
   if (data.conversation_id != null) {
@@ -99,6 +115,30 @@ export async function webPreview(request: Request, path: string): Promise<Respon
   conversation ||= { id: randomUUID(), title: data.message.trim().slice(0, 90), created_at: new Date().toISOString(), messages: [] };
   session.pending = true;
   try {
+    let answer: string;
+    let truncated = false;
+    if (localMode()) {
+      // Loopback only; no remote provider or paid fallback, even if an OpenAI key exists.
+      const response = await fetch(localRoot() + "/api/chat", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: localModel(), stream: false, keep_alive: "5m",
+          messages: [
+            { role: "system", content: "Você é JARVIS, assistente da regional Orlean da J&T. Responda somente em português, em no máximo quatro frases curtas. Seja objetivo. Esta conversa de teste não tem acesso validado aos indicadores nem memória permanente. Não invente números, causas, acessos ou registros salvos. Não calcule indicadores: oriente usar o cálculo determinístico da tela. Quando receber um resultado calculado pelo sistema, apenas explique o significado, sem alterar números. Se faltar evidência, diga que não sabe." },
+            ...conversation.messages.slice(-2).map(m => ({ role: m.role, content: m.content.slice(0, 600) })),
+            { role: "user", content: data.message.trim() },
+          ],
+          options: { temperature: 0, num_ctx: 2048, num_predict: 256 },
+        }), cache: "no-store", redirect: "error", signal: AbortSignal.timeout(120000),
+      });
+      if (!response.ok) return reply({ detail: response.status === 404 ? "Modelo local não encontrado. Execute ollama run " + localModel() : "O Ollama não conseguiu gerar a resposta. Confira se está aberto e se há memória disponível.", provider_status: response.status }, 502);
+      const result = await response.json();
+      if (result.done !== true || typeof result.message?.content !== "string" || !result.message.content.trim()) return reply({ detail: "O Ollama retornou uma resposta vazia ou inválida." }, 502);
+      answer = result.message.content;
+      truncated = result.done_reason === "length";
+    } else if (process.env.AI_PROVIDER && process.env.AI_PROVIDER !== "openai") {
+      return reply({ detail: "AI_PROVIDER inválido. Use ollama ou openai." }, 503);
+    } else {
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST", headers: { Authorization: "Bearer " + process.env.OPENAI_API_KEY, "Content-Type": "application/json" },
       body: JSON.stringify({ model: process.env.OPENAI_MODEL || "gpt-4.1-mini", store: false, max_output_tokens: 1500,
@@ -111,13 +151,14 @@ export async function webPreview(request: Request, path: string): Promise<Respon
       return reply({ detail: descriptions[response.status] || "A OpenAI não respondeu à solicitação. Tente novamente.", provider_status: response.status }, 502);
     }
     const result = await response.json();
-    const answer = (result.output || []).filter((item: any) => item.type === "message").flatMap((item: any) => item.content || []).filter((item: any) => item.type === "output_text").map((item: any) => item.text).join("\n");
+    answer = (result.output || []).filter((item: any) => item.type === "message").flatMap((item: any) => item.content || []).filter((item: any) => item.type === "output_text").map((item: any) => item.text).join("\n");
     if (result.status !== "completed" || !answer) return reply({ detail: "A OpenAI retornou uma resposta incompleta. Tente novamente." }, 502);
+    }
     conversation.messages.push({ role: "user", content: data.message.trim() }, { role: "assistant", content: answer });
     conversation.messages = conversation.messages.slice(-40);
     session.conversations.set(conversation.id, conversation);
     while (session.conversations.size > 20) session.conversations.delete(session.conversations.keys().next().value!);
-    return reply({ conversation_id: conversation.id, answer, preview: true, warnings: [notice] });
-  } catch { return reply({ detail: "Não foi possível obter a resposta da OpenAI. Tente novamente." }, 503); }
+    return reply({ conversation_id: conversation.id, answer, preview: true, provider: localMode() ? "ollama" : "openai", warnings: [notice, ...(truncated ? ["A resposta atingiu o limite de tamanho. Peça uma versão mais curta."] : [])] });
+  } catch { return reply({ detail: localMode() ? "O Ollama local não respondeu. Confirme que ele está aberto neste computador e tente novamente." : "Não foi possível obter a resposta da OpenAI. Tente novamente." }, 503); }
   finally { session.pending = false; }
 }
