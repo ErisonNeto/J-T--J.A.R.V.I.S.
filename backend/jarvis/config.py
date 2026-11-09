@@ -4,10 +4,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from .deploy import memory_url
+
 
 @dataclass
 class Settings:
-    memory_url: str = os.getenv("MEMORY_DATABASE_URL", "sqlite:///./jarvis-dev.sqlite3")
+    memory_url: str = memory_url()
+    jt_api_url: str = os.getenv("JT_API_URL", "").rstrip("/")
+    jt_api_key: str = os.getenv("JT_API_KEY", "")
+    jt_api_timeout: int = int(os.getenv("JT_API_TIMEOUT", "120"))
     operational_url: str = os.getenv("OPERATIONAL_DATABASE_URL", "")
     environment: str = os.getenv("APP_ENV", "development")
     api_key: str = os.getenv("OPENAI_API_KEY", "")
@@ -22,6 +27,28 @@ class Settings:
     retention_days: int = int(os.getenv("RETENTION_DAYS", "365"))
 
     def validate(self):
+        if self.jt_api_url:
+            from urllib.parse import urlparse
+
+            url = urlparse(self.jt_api_url)
+            if (
+                url.scheme != "https"
+                or not url.hostname
+                or url.username
+                or url.password
+                or url.query
+                or url.fragment
+            ):
+                raise ValueError(
+                    "JT_API_URL deve ser HTTPS, sem credenciais ou parâmetros."
+                )
+            if not self.jt_api_key:
+                raise ValueError("Configure JT_API_KEY.")
+            if self.operational_url:
+                raise ValueError(
+                    "Configure apenas JT_API_URL ou OPERATIONAL_DATABASE_URL."
+                )
+
         if self.environment == "production":
             if not self.memory_url.startswith("postgresql+psycopg://"):
                 raise ValueError("Produção exige PostgreSQL para memória.")

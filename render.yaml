@@ -1,21 +1,30 @@
+# Single web service. Temporary chat is available while VM integration is pending.
 services:
   - type: web
-    name: jt-jarvis-gateway
-    runtime: python
+    name: jt-jarvis-web
+    runtime: node
     plan: free
-    rootDir: backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: python -m uvicorn jarvis.gateway:create_gateway --factory --host 0.0.0.0 --port $PORT
-    healthCheckPath: /health
+    region: oregon
+    branch: feat/jarvis-web
+    rootDir: frontend
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start -- --hostname 0.0.0.0 --port $PORT
+    healthCheckPath: /jarvis
     autoDeployTrigger: "off"
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.12.12
-      - key: PREDATOR_API_URL
+      - key: NODE_VERSION
+        value: 24.22.0
+      - key: JARVIS_API_URL
+        value: https://jt-api.rockettechbr.com.br/jarvis
+      - key: JARVIS_WEB_PREVIEW
+        value: "true"
+      - key: JARVIS_WEB_ACCESS_TOKEN
         sync: false
-      - key: BRIDGE_TOKEN
+      - key: OPENAI_API_KEY
         sync: false
-      - key: CF_ACCESS_CLIENT_ID
-        sync: false
-      - key: CF_ACCESS_CLIENT_SECRET
+      - key: OPENAI_MODEL
+        value: gpt-4.1-mini
+      - key: JT_API_URL
+        value: https://jt-api.rockettechbr.com.br
+      - key: JT_API_KEY
         sync: false

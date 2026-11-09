@@ -1,3 +1,5 @@
+> **Web com banco próprio:** veja [docs/web-render.md](docs/web-render.md). Um único serviço hospeda a interface e um chat temporário de teste com GPT-4.1 mini. A memória permanente e os indicadores aguardam integração com a JT API existente; nenhum banco novo é criado.
+
 # JARVIS — primeira versão executável
 
 Assistente de Inteligência Operacional da Regional Orlean — J&T Express.

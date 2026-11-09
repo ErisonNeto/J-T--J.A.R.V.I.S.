@@ -449,12 +449,14 @@ export default function Jarvis() {
           </button>
           <button
             className={tab === "memory" ? "j-active" : ""}
+            disabled={status?.preview}
             onClick={loadMemory}
           >
             ▤ Memória operacional
           </button>
           <button
             className={tab === "research" ? "j-active" : ""}
+            disabled={status?.preview}
             onClick={() => setTab("research")}
           >
             ◎ Investigar eventos
@@ -503,13 +505,13 @@ export default function Jarvis() {
           <div className="j-status">
             <i />
             {status?.model === "local" ? "Modo local" : "Modelo configurado"}
-            <small>Memória conectada</small>
+            <small>{status?.preview ? "Conversa temporária · banco pendente" : "Memória conectada"}</small>
           </div>
         </header>
         <div className="j-mobile">
           <button onClick={() => setTab("chat")}>Chat</button>
-          <button onClick={loadMemory}>Memória</button>
-          <button onClick={() => setTab("research")}>Investigar</button>
+          <button disabled={status?.preview} onClick={loadMemory}>Memória</button>
+          <button disabled={status?.preview} onClick={() => setTab("research")}>Investigar</button>
           <button
             onClick={() => {
               stop();
@@ -521,7 +523,18 @@ export default function Jarvis() {
             Sair
           </button>
         </div>
-        <div className="j-filters">
+        {status?.preview && <div className="j-notice" role="status">
+          <p>{status.notice}</p>
+          <button disabled={busy} onClick={async () => {
+            setBusy(true);
+            try {
+              const d = await api("diagnostics");
+              const names: Record<string, string> = { jt_api: "JT API", historical_scope: "Gestão histórica", openai: "OpenAI" };
+              setNotice(Object.entries(d.checks).map(([name, result]: [string, any]) => `${names[name] || name}: ${result.ok ? "OK" : "indisponível"}${result.http_status ? ` (HTTP ${result.http_status})` : ""}${result.assignments != null ? ` · ${result.assignments} vínculos` : ""}`).join(" | "));
+            } catch (e: any) { setError(e.message); } finally { setBusy(false); }
+          }}>Testar conexões</button>
+        </div>}
+        {!status?.preview && <><div className="j-filters">
           <label>
             Indicador
             <select
@@ -575,7 +588,7 @@ export default function Jarvis() {
         <p className="j-filter-note">
           Sem datas: D-1 · Qualidade: D-2 · Avaria, Extravio e PNR: segunda a
           domingo. O recorte acima orienta a consulta.
-        </p>
+        </p></>}
         {error && (
           <div className="j-error" role="alert">
             {error}

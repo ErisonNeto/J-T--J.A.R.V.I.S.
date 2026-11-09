@@ -6,12 +6,16 @@ async function proxy(
 ) {
   const path = (await params).path.join("/");
   if (
-    !/^(status|catalog|analysis|chat|investigations|audit|conversations(?:\/[a-f0-9-]{36})?|memories(?:\/[a-f0-9-]{36}(?:\/revisions)?)?)$/.test(
+    !/^(status|catalog|diagnostics|analysis|chat|investigations|audit|conversations(?:\/[a-f0-9-]{36})?|memories(?:\/[a-f0-9-]{36}(?:\/revisions)?)?)$/.test(
       path,
     )
   )
     return Response.json({ detail: "Rota inválida" }, { status: 404 });
-  const root = process.env.JARVIS_API_URL || "http://127.0.0.1:8010";
+  if (process.env.JARVIS_WEB_PREVIEW === "true") {
+    const { webPreview } = await import("../../../../lib/web-preview");
+    return webPreview(req, path);
+  }
+  const root = process.env.JARVIS_API_URL || (process.env.JARVIS_API_HOST ? `https://${process.env.JARVIS_API_HOST}` : "http://127.0.0.1:8010");
   const url = new URL(root);
   if (process.env.NODE_ENV === "production" && url.protocol !== "https:")
     return Response.json(
@@ -56,7 +60,7 @@ async function proxy(
       root.replace(/\/$/, "") + "/api/" + path + req.nextUrl.search,
       {
         method: req.method,
-        headers: { Authorization: auth, "Content-Type": "application/json" },
+        headers: { Authorization: auth, "Content-Type": "application/json", ...(process.env.JARVIS_BRIDGE_TOKEN ? { "X-Bridge-Token": process.env.JARVIS_BRIDGE_TOKEN } : {}) },
         body: body as BodyInit | undefined,
         cache: "no-store",
         redirect: "error",

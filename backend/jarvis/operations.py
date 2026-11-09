@@ -1,7 +1,9 @@
 """Fixed SQL only. Historical scope is defined by reviewed base_assignments."""
 
 from collections import defaultdict
-from datetime import timedelta
+from datetime import date, timedelta
+import re
+import httpx
 from decimal import Decimal
 from sqlalchemy import create_engine, text
 from .periods import default_period, comparisons, today
@@ -120,11 +122,19 @@ class Operations:
             else None
         )
 
+    @property
+    def configured(self):
+        return bool(
+            self.engine or (self.settings.jt_api_url and self.settings.jt_api_key)
+        )
+
     def catalog(self):
         return [
             {
                 "id": k,
-                "enabled": bool(self.engine and k in self.settings.approved.split(",")),
+                "enabled": bool(
+                    self.configured and k in self.settings.approved.split(",")
+                ),
                 "unit": s[5],
                 "approval_required": True,
             }
@@ -140,9 +150,9 @@ class Operations:
     def rows(self, kind, start, end, base=None, manager=None):
         if kind not in SPECS:
             raise Unavailable("Indicador sem fonte validada: " + kind)
-        if not self.engine:
+        if not self.configured:
             raise Unavailable(
-                "PostgreSQL operacional não configurado ou Predator desconectado."
+                "Acesso operacional não configurado. Configure JT_API_URL e JT_API_KEY."
             )
         if kind not in self.settings.approved.split(","):
             raise Unavailable(
@@ -167,6 +177,23 @@ class Operations:
            AND (CAST(:manager AS text) IS NULL OR a.manager=:manager) {extra}
            GROUP BY CAST({day} AS date),a.base_code,a.base_name,a.manager
            ORDER BY 1,2 LIMIT 20001"""
+        if self.settings.jt_api_url:
+            return self._api_rows(
+                sql,
+                dict(
+                    rm=self.settings.rm,
+                    start=start,
+                    end=end,
+                    base=base,
+                    manager=manager,
+                    kind=kind,
+                    claim={
+                        "avaria": "Avaria",
+                        "extravio": "Extravio",
+                        "pnr": "PNR",
+                    }.get(kind),
+                ),
+            )
         try:
             with self.engine.connect() as c:
                 with c.begin():
@@ -201,6 +228,55 @@ class Operations:
                 "Falha na leitura: confira disponibilidade, permissões e diagnóstico do esquema."
             ) from e
 
+    def _api_rows(self, sql, params):
+        # Only the fixed SELECT built by rows() reaches this method. Values stay bound.
+        values = []
+
+        def bind(match):
+            value = params[match.group(1)]
+            values.append(value.isoformat() if isinstance(value, date) else value)
+            return "%s"
+
+        statement = re.sub(r"(?<!:):([a-z_]+)", bind, sql)
+        try:
+            with httpx.Client(
+                timeout=self.settings.jt_api_timeout, follow_redirects=False
+            ) as client:
+                response = client.post(
+                    self.settings.jt_api_url + "/query",
+                    headers={"X-API-Key": self.settings.jt_api_key},
+                    json={"sql": statement, "params": values},
+                )
+                response.raise_for_status()
+                payload = response.json()
+            raw = payload["rows"]
+            if not isinstance(raw, list) or len(raw) > 20000:
+                raise Unavailable(
+                    "Resposta excede o limite ou tem formato inválido. Reduza o período."
+                )
+            keys = (
+                "day",
+                "base_code",
+                "base_name",
+                "manager",
+                "numerator",
+                "denominator",
+            )
+            result = []
+            for row in raw:
+                if not isinstance(row, list) or len(row) != len(keys):
+                    raise ValueError("Formato inválido")
+                record = dict(zip(keys, row))
+                record["day"] = date.fromisoformat(record["day"])
+                result.append(record)
+            return result
+        except Unavailable:
+            raise
+        except Exception as exc:
+            raise Unavailable(
+                "Falha na JT API: confira conexão, chave, permissões e gestão histórica."
+            ) from exc
+
     def analyze(self, filters):
         start, end = (
             (filters.start, filters.end)
@@ -222,7 +298,11 @@ class Operations:
             "sources": [
                 {
                     "title": SPECS[filters.indicator][0],
-                    "type": "PostgreSQL somente leitura",
+                    "type": (
+                        "JT Server API"
+                        if self.settings.jt_api_url
+                        else "PostgreSQL somente leitura"
+                    ),
                 }
             ],
             "warnings": [

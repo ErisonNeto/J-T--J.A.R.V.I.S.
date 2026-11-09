@@ -425,3 +425,13 @@ async def test_model_payload_is_stateless_and_extracts_output(setup, monkeypatch
         await Model(s).answer("pergunta", [], {}, "operational")
         == "Resultado com evidências."
     )
+
+
+def test_diagnostics_requires_manager_and_bridge(setup):
+    client, tokens, db, settings = setup
+    assert client.get('/api/diagnostics').status_code == 401
+    assert client.get('/api/diagnostics', headers=tokens['analyst']).status_code == 403
+    response = client.get('/api/diagnostics', headers=tokens['manager'])
+    assert response.status_code == 200
+    assert response.json()['memory'] == 'connected'
+    assert not response.json()['checks']['jt_api']['ok']
