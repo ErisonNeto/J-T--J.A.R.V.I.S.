@@ -1,4 +1,4 @@
-> **Web independente (homologação):** veja [docs/web-render.md](docs/web-render.md). O `render.yaml` agora prepara frontend, backend e PostgreSQL dedicado à memória. Indicadores são consultados pela JT API; começam desabilitados até validação.
+> **Web com banco próprio:** veja [docs/web-render.md](docs/web-render.md). O `render.yaml` cria somente a interface; o backend precisa ser integrado à JT API existente na VM. Não cria novo PostgreSQL.
 
 # JARVIS — primeira versão executável
 
