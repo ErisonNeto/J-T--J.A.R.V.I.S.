@@ -50,11 +50,6 @@ services:
         value: "30"
       - key: RETENTION_DAYS
         value: "365"
-      - key: JARVIS_PUBLIC_HOST
-        fromService:
-          type: web
-          name: jt-jarvis-api-web
-          envVarKey: RENDER_EXTERNAL_HOSTNAME
 
   - type: web
     name: jt-jarvis-web
@@ -74,7 +69,7 @@ services:
         fromService:
           type: web
           name: jt-jarvis-api-web
-          envVarKey: JARVIS_PUBLIC_HOST
+          envVarKey: RENDER_EXTERNAL_HOSTNAME
       - key: JARVIS_BRIDGE_TOKEN
         fromService:
           type: web
