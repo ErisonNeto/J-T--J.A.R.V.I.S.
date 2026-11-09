@@ -11,6 +11,10 @@ async function proxy(
     )
   )
     return Response.json({ detail: "Rota inválida" }, { status: 404 });
+  if (process.env.JARVIS_WEB_PREVIEW === "true") {
+    const { webPreview } = await import("../../../../lib/web-preview");
+    return webPreview(req, path);
+  }
   const root = process.env.JARVIS_API_URL || (process.env.JARVIS_API_HOST ? `https://${process.env.JARVIS_API_HOST}` : "http://127.0.0.1:8010");
   const url = new URL(root);
   if (process.env.NODE_ENV === "production" && url.protocol !== "https:")

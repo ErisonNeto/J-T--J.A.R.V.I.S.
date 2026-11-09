@@ -1,21 +1,19 @@
-# JARVIS web — PostgreSQL e JT API existentes
+# JARVIS web — chat temporário e integração com banco próprio
 
-O Blueprint cria somente o frontend Next.js gratuito no Render. Não cria banco nem backend extra. A configuração anterior de três recursos foi substituída após a decisão de reutilizar o PostgreSQL próprio.
+O Blueprint cria somente um serviço Next.js gratuito no Render. Não cria outro banco. A versão de teste pode conversar com GPT-4.1 mini diretamente no servidor enquanto a VM está sem acesso administrativo.
 
-## Dependência antes de aplicar o plano
+## Chat temporário
 
-A JT Server API na VM precisa expor o backend autenticado do JARVIS em /jarvis. Os endpoints esperados incluem /jarvis/health, /jarvis/api/status, /jarvis/api/chat e os endpoints de memórias e conversas já implementados em backend/jarvis/main.py. A rota /query existente, sozinha, não implementa esses endpoints.
+JARVIS_WEB_PREVIEW=true habilita um backend web restrito ao token individual configurado em JARVIS_WEB_ACCESS_TOKEN. Credenciais OpenAI e JT ficam apenas no servidor. A interface avisa que as conversas são temporárias: permanecem na memória do processo por no máximo 24 horas, 20 conversas e 40 mensagens por conversa, e desaparecem quando o Render reinicia ou hiberna. Não são gravadas no PostgreSQL. Memórias operacionais, pesquisas e análises ficam indisponíveis; não existem números de demonstração.
 
-É necessário inspecionar o código da JT Server API antes de montar esse backend, para preservar as rotas dos indicadores, a autenticação, a configuração e o processo existentes. O JARVIS usa jarvis_memory para guardar conversas e memórias no schema jarvis do banco jt_indicadores, já preparado com as migrações 001–003. Não executar essas migrações novamente. Dados operacionais podem continuar sendo lidos por JT_API_URL e JT_API_KEY.
+O botão Testar conexões faz somente SELECT 1 e COUNT(*) em jarvis.base_assignments pela JT API, além de verificar acesso ao modelo OpenAI. Não permite SQL recebido do navegador ou do modelo. Existem limites por token de 30 requisições/minuto neste processo, tamanho da mensagem, histórico e concorrência. Os limites por instância não são proteção distribuída.
 
-## Configuração
+## Integração permanente pendente
 
-No frontend Render: JARVIS_API_URL aponta para a montagem HTTPS /jarvis da API existente. JARVIS_BRIDGE_TOKEN fica apenas no servidor Next.js e deve coincidir com BRIDGE_TOKEN no backend JARVIS da VM. O token individual do usuário continua separado do segredo de origem.
+Quando houver acesso à VM, inspecionar C:\JT.SERVER\api\main.py e integrar o backend autenticado JARVIS em /jarvis, usando jarvis_memory no schema jarvis já criado no banco jt_indicadores. Não executar novamente as migrações. Configurar BRIDGE_TOKEN na VM e o mesmo valor em JARVIS_BRIDGE_TOKEN no frontend. Desabilitar JARVIS_WEB_PREVIEW somente depois de testar /jarvis/health e /jarvis/api/status.
 
-A chave OpenAI, a chave JT e a senha do usuário jarvis_memory ficam no backend da VM. Usar OPENAI_MODEL=gpt-4.1-mini e APP_ENV=production. Não usar o inicializador jarvis.deploy nesta arquitetura: ele foi criado para um banco isolado no Render e deve continuar sem execução.
+Não usar jarvis.deploy nesta arquitetura: ele foi criado para um banco isolado no Render e permanece sem execução. A JT API existente continua sendo a fonte dos indicadores. O cadastro histórico e as fórmulas ainda precisam de homologação antes de habilitar análises.
 
 ## Verificação
 
-Antes do deploy do frontend: verificar /jarvis/health e a rejeição de /jarvis/api/status sem autenticação. Depois: testar o login, /api/jarvis/diagnostics pela interface, uma conversa, persistência após recarregar e uma memória. Os indicadores permanecem desabilitados até validar a gestão histórica e a comparação com os dashboards.
-
-O código de integração da JT API ainda não foi recebido nem alterado. Portanto, a montagem /jarvis ainda não está confirmada e o plano não deve ser aplicado como se o backend já estivesse disponível.
+Testar login sem chave (401), token individual, conversa curta real com OpenAI, histórico temporário e diagnóstico da JT API. A validade da chave, crédito e liberação do modelo são confirmados apenas com resposta real. Falhas do provedor são exibidas sem expor credenciais.
