@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import "./jarvis.css";
+import SlaCalculator from "./sla-calculator";
 type Analysis = {
   indicator: string;
   value: number | null;
@@ -504,7 +505,7 @@ export default function Jarvis() {
           </div>
           <div className="j-status">
             <i />
-            {status?.model === "local" ? "Modo local" : "Modelo configurado"}
+            {status?.provider === "ollama" ? `${status.model_name} · local` : (status?.model === "local" ? "Modo local" : "Modelo configurado")}
             <small>{status?.preview ? "Conversa temporária · banco pendente" : "Memória conectada"}</small>
           </div>
         </header>
@@ -529,11 +530,12 @@ export default function Jarvis() {
             setBusy(true);
             try {
               const d = await api("diagnostics");
-              const names: Record<string, string> = { jt_api: "JT API", historical_scope: "Gestão histórica", openai: "OpenAI" };
+              const names: Record<string, string> = { jt_api: "JT API", historical_scope: "Gestão histórica", openai: "OpenAI", ollama: "Ollama local" };
               setNotice(Object.entries(d.checks).map(([name, result]: [string, any]) => `${names[name] || name}: ${result.ok ? "OK" : "indisponível"}${result.http_status ? ` (HTTP ${result.http_status})` : ""}${result.assignments != null ? ` · ${result.assignments} vínculos` : ""}`).join(" | "));
             } catch (e: any) { setError(e.message); } finally { setBusy(false); }
           }}>Testar conexões</button>
         </div>}
+        {status?.preview && <SlaCalculator />}
         {!status?.preview && <><div className="j-filters">
           <label>
             Indicador
